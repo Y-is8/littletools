@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BUS 3 Contador</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: white; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .timestamp { position: absolute; top: 20px; font-family: monospace; color: #666; font-size: 14px; }
+        .stats-top { text-align: center; margin-bottom: 30px; }
+        .stats-top h1 { margin: 0; font-size: 40px; color: #d32f2f; }
+        .stats-top p { margin: 5px 0; color: #aaa; font-size: 18px; }
+        
+        /* 核心大圓盤 */
+        .counter-disc { width: 280px; height: 280px; background: radial-gradient(circle, #333 0%, #000 100%); border: 8px solid #d32f2f; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 0 50px rgba(211, 47, 47, 0.3); touch-action: manipulation; transition: transform 0.1s; }
+        .counter-disc:active { transform: scale(0.92); border-color: #ff5252; }
+        .counter-disc span { font-size: 100px; font-weight: bold; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+
+        .footer { margin-top: 50px; display: flex; flex-direction: column; align-items: center; }
+        .reset-btn { background: #333; color: #888; border: 1px solid #444; padding: 10px 30px; border-radius: 20px; cursor: pointer; font-size: 14px; margin-bottom: 20px; }
+        .brand { color: #444; font-size: 12px; letter-spacing: 2px; }
+    </style>
+</head>
+<body onclick="addCount()">
+
+    <div class="timestamp" id="time">2026-04-15 12:00:00</div>
+
+    <div class="stats-top">
+        <p>AUTOCARRO 3 (45 PAX)</p>
+        <div style="color: #666;">Faltam (剩餘): <b id="remaining" style="color: #fff;">45</b></div>
+    </div>
+
+    <div class="counter-disc">
+        <span id="main-count">0</span>
+    </div>
+
+    <div class="footer">
+        <div class="reset-btn" onclick="event.stopPropagation(); resetCount()">RESET / REINICIAR</div>
+        <div class="brand">JAVIER DIGITAL GUIDE</div>
+    </div>
+
+    <script>
+        let count = 0;
+        const total = 45;
+
+        function addCount() {
+            if (count < 99) {
+                count++;
+                updateDisplay();
+                // 震動反饋 (如果手機支持)
+                if (navigator.vibrate) navigator.vibrate(50);
+            }
+        }
+
+        function resetCount() {
+            if(confirm("Reiniciar contagem?")) {
+                count = 0;
+                updateDisplay();
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('main-count').innerText = count;
+            document.getElementById('remaining').innerText = Math.max(0, total - count);
+        }
+
+        // 更新時間戳 (為了截圖)
+        function updateTime() {
+            const now = new Date();
+            const str = now.getFullYear() + '-' + 
+                        String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(now.getDate()).padStart(2, '0') + ' ' + 
+                        String(now.getHours()).padStart(2, '0') + ':' + 
+                        String(now.getMinutes()).padStart(2, '0') + ':' + 
+                        String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('time').innerText = str;
+        }
+
+        setInterval(updateTime, 1000);
+        updateTime();
+    </script>
+</body>
+</html>
