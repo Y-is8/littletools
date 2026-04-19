@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>年龄计算器 - Javier Digital</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; padding: 15px; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 380px; border-top: 6px solid #d32f2f; }
+        h1 { color: #d32f2f; font-size: 18px; text-align: center; margin-bottom: 20px; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 5px; color: #666; font-size: 13px; font-weight: bold; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 18px; box-sizing: border-box; background-color: #fff; }
+        .result-box { margin-top: 20px; text-align: center; padding: 15px; background: #fffbe6; border-radius: 10px; border: 1px solid #ffe58f; }
+        .age-num { font-size: 56px; font-weight: bold; color: #d32f2f; display: block; line-height: 1; }
+        .age-unit { color: #333; font-size: 20px; margin-top: 5px; display: block; }
+        .category-text { margin-top:10px; font-weight:bold; font-size: 18px; }
+        .tips { margin-top: 15px; font-size: 12px; color: #999; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>年龄计算器 (Calculadora de Edad)</h1>
+        
+        <div class="input-group">
+            <label>出生年份 (Año de Nacimiento):</label>
+            <input type="number" id="year" placeholder="例: 1960" min="1920" max="2026" oninput="updateDays()">
+        </div>
+
+        <div class="input-group">
+            <label>月份 (Mes):</label>
+            <select id="month" onchange="updateDays()">
+                <option value="1">1月 (Enero)</option><option value="2">2月 (Febrero)</option>
+                <option value="3">3月 (Marzo)</option><option value="4">4月 (Abril)</option>
+                <option value="5">5月 (Mayo)</option><option value="6">6月 (Junio)</option>
+                <option value="7">7月 (Julio)</option><option value="8">8月 (Agosto)</option>
+                <option value="9">9月 (Septiembre)</option><option value="10">10月 (Octubre)</option>
+                <option value="11">11月 (Noviembre)</option><option value="12">12月 (Diciembre)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>日期 (Día):</label>
+            <select id="day" onchange="calculateAge()"></select>
+        </div>
+
+        <div class="result-box">
+            <span class="age-num" id="display-age">--</span>
+            <span class="age-unit">周岁 (Años)</span>
+            <div id="category" class="category-text"></div>
+        </div>
+        
+        <p class="tips">计算基准日 (Hoy): <span id="today-str"></span></p>
+    </div>
+
+    <script>
+        // 获取当前系统日期
+        const today = new Date();
+        document.getElementById('today-str').innerText = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
+
+        function updateDays() {
+            const year = parseInt(document.getElementById('year').value) || today.getFullYear();
+            const month = parseInt(document.getElementById('month').value);
+            const daySelect = document.getElementById('day');
+            
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const currentSelectedDay = daySelect.value;
+            
+            daySelect.innerHTML = "";
+            for (let i = 1; i <= daysInMonth; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.innerHTML = i + "日";
+                daySelect.appendChild(opt);
+            }
+            
+            if (currentSelectedDay && currentSelectedDay <= daysInMonth) {
+                daySelect.value = currentSelectedDay;
+            }
+            calculateAge();
+        }
+
+        function calculateAge() {
+            const y = parseInt(document.getElementById('year').value);
+            const m = parseInt(document.getElementById('month').value);
+            const d = parseInt(document.getElementById('day').value);
+            
+            if (!y || y > today.getFullYear()) {
+                document.getElementById('display-age').innerText = "--";
+                document.getElementById('category').innerText = "";
+                return;
+            }
+
+            let age = today.getFullYear() - y;
+            const mDiff = (today.getMonth() + 1) - m;
+            const dDiff = today.getDate() - d;
+
+            // 精确计算：如果还没到生日，减一岁
+            if (mDiff < 0 || (mDiff === 0 && dDiff < 0)) {
+                age--;
+            }
+
+            document.getElementById('display-age').innerText = age;
+            
+            const cat = document.getElementById('category');
+            if (age >= 60) {
+                cat.innerText = "⭐ 满60岁 (Adulto Mayor)";
+                cat.style.color = "#d32f2f";
+            } else if (age < 18) {
+                cat.innerText = "👶 未成年 (Menor)";
+                cat.style.color = "#52c41a";
+            } else {
+                cat.innerText = "✅ 成年 (Adulto)";
+                cat.style.color = "#1890ff";
+            }
+        }
+
+        window.onload = () => {
+            document.getElementById('year').value = 1960;
+            updateDays();
+        };
+    </script>
+</body>
+</html>
