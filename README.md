@@ -1,16 +1,19 @@
 # 🛠️ Javier's Digital Tour Guide Toolkit
 
-這是我為 2026 Cofidis/Cosmos 190人葡萄牙大團開發的實戰數位化工具包。
+平时工作时需要的一些小工具
 
 ## 🚀 核心工具 (Herramientas en Vivo)
 
 ### 1. [🏨 酒店指南 (Guia do Hotel)](https://y-is8.github.io/littletools/hotelwifi.html)
-*   **功能**：提供千禧酒店地址、Apple Maps 導航、Wi-Fi 登錄及室內撥號指南。
+*   **功能**：范例：提供千禧酒店地址、Apple Maps 導航、Wi-Fi 登錄及室內撥號指南。
 *   **語言**：葡萄牙語為主。
 
-### 2. [🔢 點名計數器 (Contador de Pasajeros)](https://y-is8.github.io/littletools/counting.html)(https://y-is8.github.io/littletools/counting2.html)
-*   **功能**：針對 BUS 3 (45 PAX) 設計的大圓盤計數器，帶有實時時間戳，方便截圖存證。
+### 2. [🔢 點名計數器 (Contador de Pasajeros)](https://y-is8.github.io/littletools/counting2.html)
+*   **功能**：針對 BUS 3 (45 PAX) 之类設計的大圓盤計數器，帶有實時時間戳，方便截圖存證。
 *   **模式**：單手盲操作，適合機場/景點快速清點。
+
+### 3. [🔢 點名計數器 (Contador de Pasajeros)](https://y-is8.github.io/littletools/counting.html)
+*   **初代版本
 
 ### 3. [🎂 年齡計算器 (Calculadora de Edad)](https://y-is8.github.io/littletools/age.html)
 *   **功能**：精確計算周歲，自動過濾無效日期（如2月31日）。
@@ -20,10 +23,7 @@
 ---
 
 ## 📅 行程提醒 (Recordatorios)
-*   **4/16 故宮**：急行軍模式，注意地面濕滑。
-*   **4/17 居庸關**：必須攜帶護照原件。
-*   **4/18 天壇**：太極課教學，注意柏樹花粉。
-*   **4/19 南站**：G11 火車 10:03 出發，行李提前一天托運。
+待补充
 
 ---
 *Powered by Javier Digital & AI Technology*
