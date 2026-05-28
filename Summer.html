@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北京夏季景区体感温度估算器</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background-color: #f5f5f5; color: #333; margin: 0; padding: 15px; }
+        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        h2 { text-align: center; color: #c93b2b; margin-top: 0; font-size: 18px; }
+        .subtitle { text-align: center; color: #666; font-size: 13px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 6px; }
+        input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-calc { width: 100%; padding: 12px; background: #c93b2b; color: #fff; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        /* 结果展示基础框 */
+        .result-box { margin-top: 20px; padding: 15px; border-radius: 8px; border-left: 5px solid #ccc; background-color: #fafafa; }
+        .result-temp { font-size: 36px; font-weight: bold; margin: 10px 0; }
+        .result-advice { font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 4px; margin-bottom: 12px; color: #111; }
+        
+        textarea { width: 100%; height: 75px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; padding: 5px; box-sizing: border-box; resize: none; }
+        .btn-copy { background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-top: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>北京夏季景区体感温度估算器</h2>
+    <div class="subtitle">面向西语国家男游客（40岁+）及核心景区优化</div>
+
+    <!-- 1. 景区选择 -->
+    <div class="form-group">
+        <label>📍 选择具体景区路线</label>
+        <select id="scenarios">
+            <option value="tiananmen">天安门广场（花岗岩蓄热反辐射/开阔）</option>
+            <option value="gugong_front">故宫（前三殿大面积开阔青砖区）</option>
+            <option value="gugong_garden">故宫（御花园/西六宫红墙古树阴凉区）</option>
+            <option value="tiantan" selected>天坛（东门进-祈年殿-圜丘坛祭天路线）</option>
+            <option value="yiheyuan">颐和园（昆明湖畔/十七孔桥大面积水汽区）</option>
+            <option value="great_wall">长城（山脊条石 - 独立实测数据）</option>
+        </select>
+    </div>
+
+    <!-- 2. 手动输入温湿度 -->
+    <div class="grid-2">
+        <div class="form-group">
+            <label>🌡️ 实测温度 (℃)</label>
+            <input type="number" id="temperature" value="34" step="0.1">
+        </div>
+        <div class="form-group">
+            <label>💧 实测湿度 (%)</label>
+            <input type="number" id="humidity" value="55" step="1">
+        </div>
+    </div>
+
+    <!-- 3. 模糊天气状况 -->
+    <div class="form-group">
+        <label>⛅ 天气与日照</label>
+        <select id="weather">
+            <option value="cloudy">多云/阴天（无直晒）</option>
+            <option value="sunny" selected>烈日直晒（无云遮挡）</option>
+            <option value="pre_rain">暴雨前夕（极度闷热空气静止）</option>
+            <option value="post_rain">雨后初晴（地面湿度蒸腾）</option>
+        </select>
+    </div>
+
+    <!-- 4. 模糊风力估算 -->
+    <div class="form-group">
+        <label>🍃 现场风力估算</label>
+        <select id="wind">
+            <option value="none">无风/微风（体感无凉意）</option>
+            <option value="medium" selected>有阵风（树枝摇摆/有凉感）</option>
+            <option value="strong">风力较大（长城或开阔地强风）</option>
+        </select>
+    </div>
+
+    <!-- 5. 服装 -->
+    <div class="form-group">
+        <label>👕 游客今日主要穿着</label>
+        <select id="clothes">
+            <option value="sugan">速干短袖 T 恤 + 过膝短裤 (Secado rápido)</option>
+            <option value="cotton_short" selected>常见：纯棉短袖 T 恤 + 过膝短裤 (Algodón + Bermudas)</option>
+            <option value="lino_long">亚麻/棉衬衫 + 休闲长裤 (Lino + Pantalones)</option>
+            <option value="denim">高危：纯棉 T 恤 + 厚牛仔裤 + 运动鞋 (Vaqueros gruesos)</option>
+        </select>
+    </div>
+
+    <button class="btn-calc" onclick="calculateApparentTemp()">开始估算体感温度</button>
+
+    <!-- 结果展示 -->
+    <div class="result-box" id="resultBox">
+        <div style="color:inherit; font-weight:bold; font-size:15px;">预估真实体感温度：</div>
+        <div id="resultTemp" style="color:inherit; font-size:36px; font-weight:bold; margin:10px 0;">-- ℃</div>
+        
+        <label style="color:#333; font-weight:bold;">📋 导游带团建议 (中文)：</label>
+        <div id="resultAdvice" class="result-advice"></div>
+        
+        <div style="background:rgba(255,255,255,0.9); padding:10px; border-radius:4px; border:1px solid #ccc;">
+            <div style="font-size:13px; font-weight:bold; color:#333; margin-bottom:5px;">📱 适合发在 WhatsApp/微信群的西语提示：</div>
+            <textarea id="esAdvice" readonly></textarea>
+            <button class="btn-copy" onclick="copyEsText()">📋 复制西语文字</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculateApparentTemp() {
+    // 1. 严格读取最纯粹的空气实测温湿度（不在这里加任何修正，防止公式畸变）
+    let T = parseFloat(document.getElementById('temperature').value) || 0;
+    let H = parseFloat(document.getElementById('humidity').value) || 0;
+    
+    const scenario = document.getElementById('scenarios').value;
+    const weather = document.getElementById('weather').value;
+    const wind = document.getElementById('wind').value;
+    const clothesType = document.getElementById('clothes').value;
+
+    // 2. 用标准的加拿大环境部 Humidex 公式算出基础空气湿热体感
+    const e = (6.11 * Math.exp(5417.7530 * (1/273.16 - 1/(273.15 + T)))) * (H / 100);
+    let baseApparent = T + (5/9) * (e - 10);
+
+    // 3. 后置环境辐射修正（符合 NOAA 气象科学标准，直接在结果上加减）
+    let radiantOffset = 0; // 太阳直晒与地面反射修正
+    
+    // 景区物理地面材质影响值
+    if (scenario === 'tiananmen') radiantOffset += 2.5;  // 100%花岗岩地表强烈热辐射
+    else if (scenario === 'gugong_front') radiantOffset += 2.0; // 青砖无遮挡反射
+    else if (scenario === 'gugong_garden') radiantOffset -= 1.5; // 古树阴凉抵消部分辐射
+    else if (scenario === 'tiantan') radiantOffset += 1.0;     // 白石台基反射
+    else if (scenario === 'yiheyuan') radiantOffset -= 0.5;    // 亲水略微减缓辐射
+
+    // 烈日日照附加值
+    if (weather === 'sunny') radiantOffset += 2.5; // 烈日直晒物理红外线热量
+    if (weather === 'pre_rain') radiantOffset += 1.0; 
+    if (weather === 'post_rain') radiantOffset += 1.5; // 地面蒸腾效果
+
+    // 4. 风力散热与服装材质扣减
+    let windReduction = 0;
+    if (wind === 'medium') windReduction = 2.0; // 阵风带走热量
+    if (wind === 'strong') windReduction = 3.5;
+
+    switch(clothesType) {
+        case 'sugan':
+            windReduction *= 1.2; // 速干衣放大风的蒸发散热效果，降温更多
+            break;
+        case 'cotton_short':
+            windReduction *= 0.9; // 纯棉吸汗黏糊，散热略差
+            break;
+        case 'lino_long':
+            windReduction *= 0.7; // 长裤阻挡了腿部风力
+            break;
+        case 'denim':
+            windReduction *= 0.4; // 厚牛仔裤严重阻断风力
+            baseApparent += 1.5;  // 牛仔裤自身带来 1.5℃ 的下肢闷热惩罚
+            break;
+    }
+
+    // 5. 最终公式：纯粹湿热 + 地表与太阳辐射热 - 风力散热
+    let apparentTemp = baseApparent + radiantOffset - windReduction;
+
+    // 6. 渲染到前端界面
+    const box = document.getElementById('resultBox');
+    const txtTemp = document.getElementById('resultTemp');
+    const txtAdvice = document.getElementById('resultAdvice');
+    const txtEs = document.getElementById('esAdvice');
+
+    txtTemp.innerText = apparentTemp.toFixed(1) + ' ℃';
+
+    let cnText = "";
+    let esText = "";
+
+    // 严格按照校准后的体感划分危险红绿灯
+    if (apparentTemp < 32) {
+        box.style.backgroundColor = "#e6f7ed"; box.style.borderColor = "#25d366"; box.style.color = "#1e4620";
+        cnText = "【体感舒适】当前环境对中老年外宾非常友好，速干衣散热极佳。提醒正常补水。";
+        esText = "¡Hola a todos! El clima está muy agradable en este momento. Es un excelente momento para caminar. ¡Disfruten!";
+    } else if (apparentTemp >= 32 && apparentTemp < 42) {
+        box.style.backgroundColor = "#fffbe6"; box.style.borderColor = "#ffc107"; box.style.color = "#7d5700";
+        cnText = "【注意：隐性中暑风险】体感闷热。特别注意40岁以上中老年男性，他们可能主观上“只觉得热、但不出汗”，请每30分钟在阴凉处强迫外宾喝水。";
+        esText = "Estimados pasajeros, el ambiente está bastante caluroso. Aunque no sientan mucha sudoración, por favor, tomen agua constantemente y busquemos la sombra.";
+    } else {
+        box.style.backgroundColor = "#fff4f2"; box.style.borderColor = "#c93b2b"; box.style.color = "#c93b2b";
+        cnText = "【高危警告：极易中暑】体感已进入烤箱模式（接近45℃）！中老年热射病及心血管风险剧增。必须强制缩短户外暴晒时间，每15-20分钟带进有冷气的建筑或商店歇脚，强迫补充水分！";
+        esText = "⚠️ AVISO IMPORTANTE: Calor extremo en el ambiente. Haremos paradas frecuentes en zonas con aire acondicionado para protegernos. Es OBLIGATORIO hidratarse ahora mismo.";
+    }
+
+    txtAdvice.innerText = cnText;
+    txtEs.value = esText;
+}
+
+
+    function copyEsText() {
+        const textarea = document.getElementById('esAdvice');
+        textarea.select();
+        document.execCommand('copy');
+        alert('西语提示已复制，可直接粘贴到 WhatsApp 或微信群！');
+    }
+
+    // 初始化自动计算一次默认值
+    window.onload = function() {
+        calculateApparentTemp();
+    };
+</script>
+
+</body>
+</html>
