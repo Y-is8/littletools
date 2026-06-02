@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>年龄和生肖计算器</title>
+    <style>
+        :root {
+            --ios-bg: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            --glass-bg: rgba(255, 255, 255, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-main: #1d1d1f;
+            --text-sub: #86868b;
+            --accent: #0071e3;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: var(--ios-bg);
+            color: var(--text-main);
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px 32px;
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 32px;
+            letter-spacing: -0.5px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-sub);
+            margin-bottom: 10px;
+            padding-left: 4px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.6);
+            color: var(--text-main);
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
+        }
+
+        .reload-btn {
+            width: 54px;
+            height: 54px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            outline: none;
+        }
+
+        .reload-btn:active {
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .reload-btn svg {
+            width: 22px;
+            height: 22px;
+            fill: var(--text-main);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reload-btn:active svg {
+            transform: rotate(-180deg);
+        }
+
+        .result-box {
+            margin-top: 36px;
+            padding: 24px 16px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: none;
+        }
+
+        .result-box.show {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+        }
+
+        .result-item {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-main);
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .highlight {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: inline-block;
+            margin: 0 4px;
+        }
+
+        .zodiac-badge {
+            font-size: 2.8rem;
+            margin-top: 8px;
+            display: block;
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>年龄和生肖计算器</h1>
+        <div class="input-group">
+            <label for="birthday">输入公历生日 (例如 19900102)</label>
+            <div class="input-wrapper">
+                <input type="text" id="birthday" placeholder="YYYYMMDD" maxlength="14" inputmode="numeric">
+                <button class="reload-btn" onclick="resetCalculator()" title="重置">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-item">您的周岁年龄是 <span class="highlight" id="ageDisplay">0</span> 岁</div>
+            <div class="result-item">您的真实生肖是 <span class="highlight" id="zodiacDisplay">?</span></div>
+            <span class="zodiac-badge" id="zodiacEmoji">✨</span>
+        </div>
+    </div>
+
+    <script>
+        // 1900-2030 农历核心高精度大整数表
+        const LUNAR_INFO = [
+            0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+            0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
+            0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
+            0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
+            0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
+            0x06ca0,0x0b550,0x15355,0x04da0,0x0a5d0,0x14573,0x052d0,0x0a9a8,0x0e950,0x06aa0,
+            0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
+            0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,
+            0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
+            0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,
+            0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
+            0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
+            0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530
+        ];
+
+        const EMOJIS = { "鼠":"🐭", "牛":"🐮", "虎":"🐯", "兔":"🐰", "龙":"🐲", "蛇":"🐍", "马":"🐴", "羊":"🐑", "猴":"🐵", "鸡":"🐔", "狗":"🐶", "猪":"🐷" };
+
+        // 🛡️ 重新设计防卡死的精准农历年转换函数
+        function getLunarYear(solarDate) {
+            let baseDate = new Date(1900, 0, 31);
+            let offset = Math.floor((solarDate.getTime() - baseDate.getTime()) / 86400000);
+            
+            let i, daysOfYear;
+            for (i = 1900; i < 2030 && offset > 0; i++) {
+                daysOfYear = getLunarYearDays(i);
+                offset -= daysOfYear;
+            }
+            
+            if (offset < 0) {
+                i--;
+            }
+            return i;
+        }
+
+        function getLunarYearDays(year) {
+            let sum = 348;
+            for (let i = 0x8000; i > 0x8; i >>= 1) {
+                sum += (LUNAR_INFO[year - 1900] & i) ? 1 : 0;
+            }
+            return sum + getLeapDays(year);
+        }
+
+        function getLeapDays(year) {
+            if (LUNAR_INFO[year - 1900] & 0xf) {
+                return (LUNAR_INFO[year - 1900] & 0x10000) ? 30 : 29;
+            }
+            return 0;
+        }
+
+        function getChineseZodiac(lunarYear) {
+            const zodiacs = ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"];
+            return zodiacs[(lunarYear - 4) % 12];
+        }
+
+        const inputEl = document.getElementById('birthday');
+        const resultBox = document.getElementById('resultBox');
+
+        inputEl.addEventListener('input', function(e) {
+            let value = this.value.replace(/\D/g, ''); // 仅保留数字
+            
+            // 动态格式化 YYYY - MM - DD
+            if (value.length > 4 && value.length <= 6) {
+                value = value.slice(0, 4) + ' - ' + value.slice(4);
+            } else if (value.length > 6) {
+                value = value.slice(0, 4) + ' - ' + value.slice(4, 6) + ' - ' + value.slice(6, 8);
+            }
+            this.value = value;
+
+            const pureDigits = value.replace(/\s-\s/g, '');
+            if (pureDigits.length === 8) {
+                executeCalculation(pureDigits);
+            } else {
+                resultBox.classList.remove('show');
+            }
+        });
+
+        function executeCalculation(dateStr) {
+            const year = parseInt(dateStr.slice(0, 4));
+            const month = parseInt(dateStr.slice(4, 6)) - 1;
+            const day = parseInt(dateStr.slice(6, 8));
+
+            // 防火墙：月份必须在 0-11，日期必须在 1-31 之间
+            if (month < 0 || month > 11 || day < 1 || day > 31) return;
+
+            const birthDate = new Date(year, month, day);
+            if (birthDate.getFullYear() !== year || birthDate.getMonth() !== month || birthDate.getDate() !== day) {
+                return; 
+            }
+
+			const today = new Date();
+			let age = today.getFullYear() - birthDate.getFullYear();
+			const monthDiff = today.getMonth() - birthDate.getMonth();
+			if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+			age--;
+			}
+			if (age < 0) age = 0;
+			
+			const lunarYear = getLunarYear(birthDate);
+			const zodiac = getChineseZodiac(lunarYear);
+			
+			document.getElementById('ageDisplay').textContent = age;
+			document.getElementById('zodiacDisplay').textContent = zodiac;
+			document.getElementById('zodiacEmoji').textContent = EMOJIS[zodiac] || "✨";
+			
+			resultBox.classList.add('show');
+			}
+			
+			function resetCalculator() {
+			inputEl.value = '';
+			resultBox.classList.remove('show');
+			inputEl.focus();
+			}
+			
+    </script>
+</body>
+</html>
