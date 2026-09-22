@@ -17,18 +17,20 @@
         .footer { margin-top: 50px; display: flex; flex-direction: column; align-items: center; }
         .reset-btn { background: #333; color: #888; border: 1px solid #444; padding: 10px 30px; border-radius: 20px; cursor: pointer; font-size: 14px; margin-bottom: 20px; }
         .brand { color: #444; font-size: 12px; letter-spacing: 2px; }
+        
+        /* 🚨 iPhone 震动黑科技：把触发震动的开关彻底隐藏 */
+        #ios-haptic-trigger { position: absolute; top: -9999px; left: -9999px; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
     </style>
-	<!-- 🚨 让安卓 Chrome 识别为“可独立全屏运行的 WebApp” -->
+    <!-- 🚨 安卓 Chrome 独立全屏运行规范 (修复了JSON单双引号冲突) -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="data:application/json,{'display':'fullscreen','orientation':'portrait'}">
-
+    <link rel="manifest" href='data:application/json,{"display":"fullscreen","orientation":"portrait"}'>
 </head>
 
 <script>
     /* ——————— ⚙️ 每天改這裏就可以 (MODIFICAR AQUÍ) ——————— */
     
-    const TITULO_BUS = 🚌🥑AUTOBÚS A"; // 🔶 大巴编号
+    const TITULO_BUS = "🚌🥑AUTOBÚS A"; // 🔶 大巴编号 (已修复双引号)
     const TOTAL_PAX = 36;            // 🔶 客人数 (PAX)
     const TOTAL_GUIA = 0;           // 🔶 领队/跟团导游人数 (Staff)
 
@@ -37,11 +39,23 @@
     const totalFinal = TOTAL_PAX + TOTAL_GUIA;
     let count = 0;
 
+    function triggerHaptic() {
+        // 1. 安卓机调用原厂震动
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+        // 2. iPhone 机型通过切换隐形 switch 强制触发物理马达
+        const iosSwitch = document.getElementById('ios-haptic-trigger');
+        if (iosSwitch) {
+            iosSwitch.click(); 
+        }
+    }
+
     function addCount() {
         if (count < 99) {
             count++;
             updateDisplay();
-            if (navigator.vibrate) navigator.vibrate(50);
+            triggerHaptic();
         }
     }
 
@@ -78,6 +92,9 @@
 </script>
 
 <body onclick="addCount()">
+    <!-- 🚨 隐藏在幕后的 iPhone 触觉激发器 -->
+    <input type="checkbox" switch id="ios-haptic-trigger">
+
     <div class="timestamp" id="time"></div>
         
     <div class="stats-top">
