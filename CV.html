@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CONTADOR</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: white; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .timestamp { position: absolute; top: 20px; font-family: monospace; color: #666; font-size: 14px; }
+        .stats-top { text-align: center; margin-bottom: 30px; cursor: pointer; }
+        .stats-top p { margin: 5px 0; color: #aaa; font-size: 20px; font-weight: bold; }
+        
+        .counter-disc { width: 280px; height: 280px; background: radial-gradient(circle, #333 0%, #000 100%); border: 8px solid #d32f2f; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 0 50px rgba(211, 47, 47, 0.3); touch-action: manipulation; transition: transform 0.1s; }
+        .counter-disc:active { transform: scale(0.92); border-color: #ff5252; }
+        .counter-disc span { font-size: 100px; font-weight: bold; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+
+        .footer { margin-top: 50px; display: flex; flex-direction: column; align-items: center; }
+        .reset-btn { background: #333; color: #888; border: 1px solid #444; padding: 10px 30px; border-radius: 20px; cursor: pointer; font-size: 14px; margin-bottom: 20px; }
+        .brand { color: #444; font-size: 12px; letter-spacing: 2px; }
+        
+        #ios-haptic-trigger { position: absolute; top: -9999px; left: -9999px; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+    </style>
+    <!-- 🚨 强制独立运行，规避国产系统拦截全屏 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href='data:application/json,{"display":"fullscreen","orientation":"portrait"}'>
+</head>
+
+<script>
+    // 💡 基础初始值，现场可以直接点击上方文字修改！
+    let busTitle = "🚌🥑AUTOBÚS A";
+    let totalPax = 36;            
+    let totalGuia = 0;           
+    let totalFinal = totalPax + totalGuia;
+    let count = 0;
+
+    // 🚨 終極音效與震動融合函數
+    function triggerHaptic() {
+        // 【1】iPhone (iOS) 音效黑科技：利用 Web Audio API 在本地實時合成高頻清脆音，0延遲、不卡頓、斷網也能響！
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine'; // 正弦波，聲音最清脆
+                osc.frequency.setValueAtTime(1200, ctx.currentTime); // 1200Hz 高音，人海裡穿透力極強
+                
+                // 控制音量與極速收尾（只響 0.05 秒），清脆俐落、絕不爆音
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.05);
+            }
+        } catch (e) { console.log("Audio play failed", e); }
+
+        // 【2】安卓打包成 APK 或者是普通瀏覽器時的最高行政震動命令
+        if (typeof Android !== 'undefined' && Android.vibrate) {
+            Android.vibrate(60); // 專為 Website 2 APK 觸發底層馬達
+        } else if (navigator.vibrate) {
+            navigator.vibrate(60); // 安卓普通瀏覽器原生震動
+        }
+
+        // 【3】隱形 iPhone 觸覺開關機制保留
+        const iosSwitch = document.getElementById('ios-haptic-trigger');
+        if (iosSwitch) { iosSwitch.click(); } 
+    }
+
+    function addCount() {
+        if (count < 99) {
+            count++;
+            updateDisplay();
+            triggerHaptic(); // 💡 每次加人數，觸發雙系統音效與震動反饋
+        }
+    }
+
+    // 🌟 神级外挂：在手机现场点击上方“Total”区域，直接弹出输入框改人数！
+    function changeSettings(event) {
+        event.stopPropagation(); // 阻止触发加人数
+        let newPax = prompt("¿Cuántos pasajeros (PAX) hoy? \n(今天有多少位客人？请输入数字):", totalPax);
+        if (newPax !== null && !isNaN(newPax)) {
+            totalPax = parseInt(newPax);
+            totalFinal = totalPax + totalGuia;
+            updateDisplay();
+            triggerHaptic();
+        }
+    }
+
+    function resetCount(event) {
+        event.stopPropagation();
+        if(confirm("¿Reiniciar la cuenta?")) {
+            count = 0;
+            updateDisplay();
+        }
+    }
+
+    function updateDisplay() {
+        document.getElementById('main-count').innerText = count;
+        document.getElementById('remaining').innerText = Math.max(0, totalFinal - count);
+        document.getElementById('display-total').innerText = totalFinal;
+    }
+
+    function updateTime() {
+        const now = new Date();
+        document.getElementById('time').innerText = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
+    }
+
+    window.onload = () => {
+        document.getElementById('bus-name').innerText = busTitle;
+        // 绑定 pointerdown 事件确保部分严格的安卓机型触发震动API
+        document.getElementById('click-zone').addEventListener('pointerdown', (e) => {
+            // 💡 確保只有點擊非按鈕區域時才觸發計數與音效
+            if(e.target.id !== 'setting-zone' && e.target.id !== 'reset-zone' && !document.getElementById('setting-zone').contains(e.target)) {
+                addCount();
+            }
+        });
+        updateDisplay();
+        setInterval(updateTime, 1000);
+        updateTime();
+    };
+</script>
+
+<!-- 🚨 整个页面作为点击区，但排除顶部和底部的功能按钮 -->
+<body id="click-zone">
+    <input type="checkbox" switch id="ios-haptic-trigger">
+    <div class="timestamp" id="time"></div>
+        
+    <!-- 🌟 点击这里就可以弹出修改人数框 -->
+    <div class="stats-top" id="setting-zone" onclick="changeSettings(event)">
+        <p id="bus-name"></p>
+        <div style="color: #666; font-size:16px; background:#222; padding:8px 15px; border-radius:10px; margin-top:5px;">
+            Total: <span id="display-total" style="color:#00ff88; font-weight:bold;"></span> | 🙀 Faltan: <b id="remaining" style="color: #ff5252;"></b>
+            <br><span style="font-size:10px; color:#555;">[ Toca aquí para cambiar PAX / 点击此处修改人数 ]</span>
+        </div>
+    </div>
+
+    <div class="counter-disc">
+        <span id="main-count">0</span>
+    </div>
+
+    <div class="footer">
+        <div class="reset-btn" id="reset-zone" onclick="resetCount(event)">RESET / REINICIAR</div>
+        <div class="brand">JAVIER DIGITAL GUIDE</div>
+    </div>
+</body>
+</html>
