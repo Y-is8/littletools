@@ -14,11 +14,13 @@
 
 ### 3. [🔢 點名計數器 (Contador de Pasajeros)](https://y-is8.github.io/littletools/counting.html)
 *   **初代版本
+*   **V3 可改总人数 [点名计数器V3](https://y-is8.github.io/littletools/countingpeople.html)
 
 ### 3. [🎂 年齡計算器 (Calculadora de Edad)](https://y-is8.github.io/littletools/age.html)
 *   **功能**：精確計算周歲，自動過濾無效日期（如2月31日）。
 *   **場景**：景點門票校驗、免票老人 (Adulto Mayor) 判定。
 *   **語言**：中文/西班牙語。
+*   [年龄+属相](https://y-is8.github.io/littletools/ageandzodiac.html)
 
 ---
 
