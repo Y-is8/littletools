@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CONTADOR</title>
+    <style>
+        body { 
+            font-family: -apple-system, sans-serif; 
+            background: #1a1a1a; 
+            color: white; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            overflow: hidden; 
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .timestamp { 
+            position: absolute; 
+            top: 3vh; 
+            font-family: monospace; 
+            color: #666; 
+            font-size: 3.5vw; 
+        }
+
+        /* 顶部标题区 */
+        .title-bus {
+            font-size: 5.5vw;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 2vh;
+            color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 还原截图中的黑色半透明圆角状态栏 */
+        .stats-top { 
+            text-align: center; 
+            margin-bottom: 4vh; 
+            cursor: pointer; 
+            padding: 12px 25px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: background 0.2s;
+        }
+        .stats-top:active {
+            background: rgba(255, 255, 255, 0.12);
+        }
+        .stats-top p { 
+            margin: 0 0 5px 0; 
+            color: #aaa; 
+            font-size: 4.5vw; 
+            font-weight: 500; 
+        }
+        .stats-top p span.highlight-green {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .stats-top p span.highlight-red {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .stats-top .hint-text {
+            font-size: 2.8vw;
+            color: #555;
+            margin: 0;
+            font-weight: normal;
+        }
+        
+        /* 自适应大圆盘 */
+        .counter-disc { 
+            width: 68vmin; 
+            height: 68vmin; 
+            max-width: 330px;  
+            max-height: 330px;
+            background: radial-gradient(circle, #2a2a2a 0%, #0a0a0a 100%); 
+            border: 2vmin solid #d32f2f; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            position: relative; 
+            box-shadow: 0 0 50px rgba(211, 47, 47, 0.25); 
+            touch-action: manipulation; 
+            transition: transform 0.08s; 
+            cursor: pointer;
+        }
+        .counter-disc:active { 
+            transform: scale(0.94); 
+            border-color: #ff5252; 
+        }
+        .counter-disc span { 
+            font-size: 26vmin; 
+            font-weight: bold; 
+            text-shadow: 0 0 20px rgba(255,255,255,0.4); 
+        }
+
+        /* 针对大屏幕平板和电脑端的优化锁定限制 */
+        @media (min-width: 600px) {
+            .timestamp { font-size: 14px; }
+            .title-bus { font-size: 24px; }
+            .stats-top p { font-size: 18px; }
+            .stats-top .hint-text { font-size: 11px; }
+            .counter-disc { border-width: 8px; }
+            .counter-disc span { font-size: 130px; }
+        }
+
+        .footer { 
+            margin-top: 5vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+        }
+        /* 还原截图中的扁平胶囊重置按钮 */
+        .reset-btn { 
+            background: rgba(255,255,255,0.06); 
+            color: #777; 
+            border: 1px solid rgba(255,255,255,0.04); 
+            padding: 10px 45px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+        .reset-btn:active {
+            background: rgba(255,255,255,0.15);
+            color: #bbb;
+        }
+        .brand { 
+            color: #333; 
+            font-size: 11px; 
+            letter-spacing: 2px; 
+            margin-top: 25px;
+        }
+    </style>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href='data:application/json,{"display":"fullscreen","orientation":"portrait"}'>
+</head>
+<body>
+
+    <!-- 顶端实时系统时间 -->
+    <div class="timestamp" id="time-display">00:00:00</div>
+
+    <!-- 车辆标题 -->
+    <div class="title-bus">🚌 🍏 AUTOBÚS A</div>
+
+    <!-- 顶端状态面板（点击可弹窗修改总人数） -->
+    <div class="stats-top" id="total-area">
+        <p>Total: <span class="highlight-green" id="total-val">36</span> | 🙀 Faltan: <span class="highlight-red" id="faltan-val">33</span></p>
+        <p class="hint-text">[ Toca aquí para cambiar PAX / 点击此处修改总人数 ]</p>
+    </div>
+
+    <!-- 计数大圆盘（点一下，中间数字+1，上面Faltan-1） -->
+    <div class="counter-disc" id="counter-area">
+        <span id="counter-val">3</span>
+    </div>
+
+    <div class="footer">
+        <!-- 重置清零按钮 -->
+        <button class="reset-btn" id="reset-area">RESET / REINICIAR</button>
+        <div class="brand">JAVIER DIGITAL GUIDE</div>
+    </div>
+
+    <script>
+        // 1. 初始化核心业务数据（完全对齐截图默认值）
+        let totalPAX = 36;       // 总人数（默认36） [3]
+        let currentOnboard = 3;  // 已上车人数（大圆盘默认显示3） [3]
+
+        // 2. 获取网页对应的节点
+        const totalVal = document.getElementById('total-val');
+        const faltanVal = document.getElementById('faltan-val');
+        const counterVal = document.getElementById('counter-val');
+        const totalArea = document.getElementById('total-area');
+        const counterArea = document.getElementById('counter-area');
+        const resetArea = document.getElementById('reset-area');
+        const timeDisplay = document.getElementById('time-display');
+
+        // 手机物理触觉震动反馈
+        function doHaptic() {
+            if (navigator.vibrate) {
+                navigator.vibrate(15);
+            }
+        }
+
+        // 3. 核心视图渲染：计算并刷新全车人数状态 [3]
+        function refreshUI() {
+            // 计算还剩多少人没到：总人数 - 已上车人数 [3]
+            let missingCount = totalPAX - currentOnboard;
+            
+            // 安全限制：防止倒扣成负数
+            if (missingCount < 0) missingCount = 0;
+
+            // 渲染数据到对应的网签位置
+            totalVal.textContent = totalPAX;
+            faltanVal.textContent = missingCount;
+            counterVal.textContent = currentOnboard;
+        }
+
+        // 4. 点击大红圈圆盘逻辑：已到人数加 1，联动导致未到人数自动倒数减 1
+        function handleCount(e) {
+            if(e) e.preventDefault(); // 阻止移动端多点触控或快速连击导致的页面放大缩放
+            
+            // 业务限制：上车人数不能超过设定的总人数
+            if (currentOnboard < totalPAX) {
+                currentOnboard++;
+                refreshUI();
+                doHaptic();
+            }
+        }
+        // 绑定手机和电脑的多端连击事件
+        counterArea.addEventListener('touchstart', handleCount, { passive: false });
+        counterArea.addEventListener('mousedown', function(e) {
+            if ('ontouchstart' in window) return; 
+            handleCount(e);
+        });
+
+        // 5. 点击顶端黑色状态栏：手动输入修改总人数（PAX） [3]
+        totalArea.addEventListener('click', function() {
+            let input = prompt("Modificar Total / 修改车辆总人数 (PAX):", totalPAX);
+            if (input !== null && input.trim() !== "") {
+                let num = parseInt(input, 10);
+                if (!isNaN(num) && num >= 0) {
+                    totalPAX = num;
+                    refreshUI(); // 重新计算倒数
+                    doHaptic();
+                } else {
+                    alert("Por favor, introduce un número válido.");
+                }
+            }
+        });
+
+        // 6. 点击 RESET 按钮逻辑：大圈已到人数归 0，未到人数复位恢复等于总人数 [3]
+        resetArea.addEventListener('click', function() {
+            currentOnboard = 0; // 圆盘归 0
+            refreshUI();       // 上面的 Faltan 会自动变回等于 Total
+            doHaptic();
+        });
+
+        // 7. 顶端系统时间实时走字效果
+        function updateTime() {
+            let now = new Date();
+            let hrs = String(now.getHours()).padStart(2, '0');
+            let mins = String(now.getMinutes()).padStart(2, '0');
+            let secs = String(now.getSeconds()).padStart(2, '0');
+            timeDisplay.textContent = hrs + ":" + mins + ":" + secs;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 8. 首次加载运行初始化
+        refreshUI();
+    </script>
+</body>
+</html>
