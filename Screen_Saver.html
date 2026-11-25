@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>流光溢彩</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0a0a0f;
+            cursor: none;
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <canvas id="screensaver"></canvas>
+    <script>
+    const canvas = document.getElementById('screensaver');
+    const ctx = canvas.getContext('2d');
+
+    let width, height, centerX, centerY;
+    let particles = [];
+    let time = 0;
+    let mouseX = 0, mouseY = 0;
+    let mouseActive = false;
+
+    // ============================================================
+    //  高级配色方案 - 低调奢华
+    //  深蓝紫 + 琥珀金 + 雾粉 + 青绿，低饱和度，柔和过渡
+    // ============================================================
+    const PALETTE = [
+        { h: 260, s: 45, l: 35 },  // 深蓝紫
+        { h: 280, s: 40, l: 40 },  // 薰衣草紫
+        { h: 320, s: 35, l: 42 },  // 雾粉
+        { h: 35,  s: 55, l: 50 },  // 琥珀金
+        { h: 50,  s: 50, l: 55 },  // 暖金
+        { h: 170, s: 35, l: 38 },  // 青绿
+        { h: 200, s: 40, l: 42 },  // 雾霾蓝
+        { h: 240, s: 35, l: 45 },  // 靛蓝
+    ];
+
+    const CONFIG = {
+        particleCount: 400,
+        spiralArms: 6,
+        baseSpeed: 0.002,
+        colorSpeed: 0.3,
+        particleSize: { min: 3, max: 10 },
+        trailOpacity: 0.02,
+        attractStrength: 0.0002,
+        burstCount: 5,
+    };
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        centerX = width / 2;
+        centerY = height / 2;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        mouseActive = true;
+    });
+    document.addEventListener('mouseleave', () => { mouseActive = false; });
+    document.addEventListener('click', (e) => { createBurst(e.clientX, e.clientY); });
+
+    // 从调色板中选取柔和颜色
+    function getElegantColor(offset, alpha = 1) {
+        const hue = (time * CONFIG.colorSpeed * 30 + offset * 360) % 360;
+        // 在调色板中插值
+        const idx = (hue / 360) * PALETTE.length;
+        const i1 = Math.floor(idx) % PALETTE.length;
+        const i2 = (i1 + 1) % PALETTE.length;
+        const t = idx - Math.floor(idx);
+        const h = PALETTE[i1].h + (PALETTE[i2].h - PALETTE[i1].h) * t;
+        const s = PALETTE[i1].s + (PALETTE[i2].s - PALETTE[i1].s) * t;
+        const l = PALETTE[i1].l + (PALETTE[i2].l - PALETTE[i1].l) * t;
+        return `hsla(${h}, ${s}%, ${l}%, ${alpha})`;
+    }
+
+    function getElegantGlow(offset, alpha = 0.4) {
+        const hue = (time * CONFIG.colorSpeed * 30 + offset * 360) % 360;
+        const idx = (hue / 360) * PALETTE.length;
+        const i1 = Math.floor(idx) % PALETTE.length;
+        const i2 = (i1 + 1) % PALETTE.length;
+        const t = idx - Math.floor(idx);
+        const h = PALETTE[i1].h + (PALETTE[i2].h - PALETTE[i1].h) * t;
+        const s = PALETTE[i1].s + (PALETTE[i2].s - PALETTE[i1].s) * t;
+        const l = PALETTE[i1].l + (PALETTE[i2].l - PALETTE[i1].l) * t;
+        return `hsla(${h}, ${s}%, ${l + 15}%, ${alpha})`;
+    }
+
+    // 背景渐变
+    function drawBackground() {
+        const gradient = ctx.createRadialGradient(
+            centerX, centerY, 0,
+            centerX, centerY, Math.max(width, height) * 0.7
+        );
+        const hue = (time * CONFIG.colorSpeed * 30) % 360;
+        gradient.addColorStop(0, `hsla(${hue + 240}, 30%, 8%, 1)`);
+        gradient.addColorStop(0.5, `hsla(${hue + 260}, 25%, 5%, 1)`);
+        gradient.addColorStop(1, '#050508');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+    }
+
+    // 中心光晕 - 非常柔和
+    function drawCenterGlow() {
+        const gradient = ctx.createRadialGradient(
+            centerX, centerY, 0,
+            centerX, centerY, Math.min(width, height) * 0.35
+        );
+        const hue = (time * CONFIG.colorSpeed * 30) % 360;
+        gradient.addColorStop(0, `hsla(${hue + 240}, 25%, 25%, 0.06)`);
+        gradient.addColorStop(0.5, `hsla(${hue + 260}, 20%, 20%, 0.03)`);
+        gradient.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, Math.min(width, height) * 0.35, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+    }
+
+    // 连线效果 - 增加精致感
+    function drawConnections() {
+        const maxDist = 80;
+        for (let i = 0; i < particles.length; i++) {
+            if (particles[i].isBurst) continue;
+            for (let j = i + 1; j < particles.length; j++) {
+                if (particles[j].isBurst) continue;
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < maxDist) {
+                    const alpha = (1 - dist / maxDist) * 0.08;
+                    const hue = (time * CONFIG.colorSpeed * 30 + (particles[i].colorOffset + particles[j].colorOffset) * 180) % 360;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.strokeStyle = `hsla(${hue}, 30%, 50%, ${alpha})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    class Particle {
+        constructor(x, y, isBurst = false) {
+            this.x = x || centerX + (Math.random() - 0.5) * width * 0.4;
+            this.y = y || centerY + (Math.random() - 0.5) * height * 0.4;
+            this.vx = (Math.random() - 0.5) * 1;
+            this.vy = (Math.random() - 0.5) * 1;
+            this.life = 1;
+            this.maxLife = isBurst ? 100 + Math.random() * 50 : 500 + Math.random() * 300;
+            this.age = 0;
+            this.size = CONFIG.particleSize.min + Math.random() * (CONFIG.particleSize.max - CONFIG.particleSize.min);
+            this.angle = Math.atan2(this.y - centerY, this.x - centerX);
+            this.distance = Math.sqrt((this.x - centerX) ** 2 + (this.y - centerY) ** 2) || 100;
+            this.speed = CONFIG.baseSpeed + Math.random() * 0.001;
+            this.isBurst = isBurst;
+            this.colorOffset = Math.random();
+            this.wobble = Math.random() * Math.PI * 2;
+            this.wobbleSpeed = 0.005 + Math.random() * 0.01;
+            this.wobbleAmplitude = 1 + Math.random() * 2;
+            this.trail = [];
+            this.maxTrail = isBurst ? 4 : 12;
+            this.pulsePhase = Math.random() * Math.PI * 2;
+            this.pulseSpeed = 0.01 + Math.random() * 0.02;
+        }
+        update() {
+            if (!this.isBurst) {
+                this.trail.push({ x: this.x, y: this.y });
+                if (this.trail.length > this.maxTrail) this.trail.shift();
+            }
+            if (!this.isBurst) {
+                this.angle += this.speed;
+                this.distance += Math.sin(time * this.wobbleSpeed + this.wobble) * this.wobbleAmplitude;
+                const targetX = centerX + Math.cos(this.angle) * this.distance;
+                const targetY = centerY + Math.sin(this.angle) * this.distance;
+                this.vx += (targetX - this.x) * 0.005;
+                this.vy += (targetY - this.y) * 0.005;
+                this.vx += Math.cos(this.angle + Math.PI / 2) * 0.05;
+                this.vy += Math.sin(this.angle + Math.PI / 2) * 0.05;
+            } else {
+                this.life -= 1 / this.maxLife;
+                this.vx *= 0.97;
+                this.vy *= 0.97;
+            }
+            if (mouseActive) {
+                const dx = mouseX - this.x, dy = mouseY - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) + 1;
+                const force = CONFIG.attractStrength * Math.min(dist * 0.01, 1.5);
+                this.vx += dx / dist * force;
+                this.vy += dy / dist * force;
+            }
+            this.vx *= 0.96;
+            this.vy *= 0.96;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.age++;
+            this.pulsePhase += this.pulseSpeed;
+            if (!this.isBurst) this.life = Math.max(0, 1 - this.age / this.maxLife);
+            if (this.x < -50 || this.x > width + 50 || this.y < -50 || this.y > height + 50) {
+                if (!this.isBurst) this.reset();
+            }
+            return this.life > 0;
+        }
+        reset() {
+            const armAngle = (Math.floor(Math.random() * CONFIG.spiralArms) / CONFIG.spiralArms) * Math.PI * 2;
+            const startDist = 80 + Math.random() * 120;
+            this.x = centerX + Math.cos(armAngle) * startDist;
+            this.y = centerY + Math.sin(armAngle) * startDist;
+            this.angle = armAngle;
+            this.distance = startDist;
+            this.vx = (Math.random() - 0.5) * 1;
+            this.vy = (Math.random() - 0.5) * 1;
+            this.age = 0;
+            this.life = 1;
+            this.maxLife = 500 + Math.random() * 300;
+            this.colorOffset = Math.random();
+            this.trail = [];
+            this.pulsePhase = Math.random() * Math.PI * 2;
+        }
+        draw() {
+            const pulse = 0.7 + 0.3 * Math.sin(this.pulsePhase);
+            const alpha = this.life * pulse * (this.isBurst ? 0.9 : 0.6);
+            const color = getElegantColor(this.colorOffset);
+            const glowColor = getElegantGlow(this.colorOffset, alpha * 0.35);
+            if (this.trail.length > 1 && !this.isBurst) {
+                ctx.beginPath();
+                ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                for (let i = 1; i < this.trail.length; i++) ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                ctx.lineTo(this.x, this.y);
+                ctx.strokeStyle = getElegantColor(this.colorOffset, alpha * 0.3);
+                ctx.lineWidth = this.size * 0.3;
+                ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size * pulse, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (this.size > 5) {
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size * 2.5
+                );
+                gradient.addColorStop(0, glowColor);
+                gradient.addColorStop(0.6, getElegantGlow(this.colorOffset, alpha * 0.15));
+                gradient.addColorStop(1, 'transparent');
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+        }
+    }
+
+    function createBurst(x, y) {
+        for (let i = 0; i < CONFIG.burstCount * 8; i++) {
+            const angle = (Math.PI * 2 * i) / (CONFIG.burstCount * 8);
+            const speed = 1.5 + Math.random() * 3;
+            const p = new Particle(x, y, true);
+            p.vx = Math.cos(angle) * speed;
+            p.vy = Math.sin(angle) * speed;
+            p.size = 3 + Math.random() * 5;
+            p.colorOffset = i / (CONFIG.burstCount * 8);
+            particles.push(p);
+        }
+    }
+
+    function initParticles() {
+        particles = [];
+        for (let i = 0; i < CONFIG.particleCount; i++) particles.push(new Particle());
+    }
+
+    function animate() {
+        // 使用背景渐变替代纯黑
+        drawBackground();
+        drawCenterGlow();
+        particles = particles.filter(p => p.update());
+        while (particles.length < CONFIG.particleCount) particles.push(new Particle());
+        // 绘制连线
+        drawConnections();
+        const normalParticles = particles.filter(p => !p.isBurst);
+        const burstParticles = particles.filter(p => p.isBurst);
+        normalParticles.forEach(p => p.draw());
+        burstParticles.forEach(p => p.draw());
+        time++;
+        requestAnimationFrame(animate);
+    }
+
+    initParticles();
+    animate();
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.key === 'q' || e.key === 'Q') {
+            document.body.style.cursor = 'default';
+            setTimeout(() => window.close(), 100);
+        }
+    });
+    </script>
+</body>
+</html>
